@@ -16,7 +16,7 @@ let package = Package(
         .binaryTarget(
             name: "Tokenizer",
             url: "https://github.com/infra-astropay/tokenizer-ios-spm/releases/download/1.1.2/Tokenizer.xcframework.zip",
-            checksum: "cb8a4188367a229955b1c8c45f985453bbb33e02785984780cfd244cf1b1d2d3"
+            checksum: "3ce51b5bd39748e533a688f85db1e0bba3649aa20cd79fae9da760d347251fe9"
         )
     ]
 )
