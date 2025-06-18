@@ -1,0 +1,15 @@
+{
+  "originHash" : "3349d639049354322a44b2638d2ff6114778a151bd54a9e7628d50fa9d6da04d",
+  "pins" : [
+    {
+      "identity" : "tokenizer-ios-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/infra-astropay/tokenizer-ios-spm",
+      "state" : {
+        "revision" : "25ec9f5eb5c2114798520e3f72605894cc9fd3cd",
+        "version" : "1.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}
