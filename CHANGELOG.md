@@ -1,5 +1,35 @@
 # Tokenizer - Changelog
 
+## [1.3.0] - 02/09/2026
+### Changed
+
+- **CVC is now always tokenized as volatile.** A CVC is sensitive authentication data that must not be retained beyond the authorization it was collected for, so a field configured with `fieldType: .cvc` is always sent to the Tokenizer API with `volatile: true`. The `isVolatile` property of `SecureTextFieldViewModel` is still honored for every other field type, but it can no longer lower this behavior for `cvc`: building the view model with `isVolatile: false` has no effect on that field type.
+- **`RevealTokenError.tokenNotFound` no longer carries the submitted token.** The error previously echoed the token that was sent to the API, so it could leak into log lines, crash reports or screenshots through `localizedDescription`, `String(describing:)` or a `dump()`. The associated value was removed and the message is now `Token not found.`
+This is a source-breaking change for callers that pattern match on the case with its associated value.
+
+#### Example
+
+##### Before:
+
+```swift
+tokenRevealer.revealSubscribedViews { result in
+  if case .failure(.tokenNotFound(let token)) = result {
+    logger.log("Reveal failed for token: \(token)")
+  }
+}
+```
+
+##### After:
+
+```swift
+tokenRevealer.revealSubscribedViews { result in
+  if case .failure(.tokenNotFound) = result {
+    // Use your own non-sensitive request identifier for support correlation.
+    logger.log("Reveal failed: token not found (requestId: \(requestId))")
+  }
+}
+```
+
 ## [1.2.0] - 26/03/2025
 ### Changed
 

@@ -39,7 +39,7 @@ Paste the following URL into the search bar: https://github.com/infra-astropay/t
 
 ### 3. Select the version
 
-Choose the latest version (e.g., `1.2.0`) or specify a version that suits your needs. Click **Add Package**.
+Choose the latest version (e.g., `1.3.0`) or specify a version that suits your needs. Click **Add Package**.
 
 ### 4. Import the module
 
@@ -94,6 +94,21 @@ The `TokenRevealer` is responsible for **controlled disclosure** of sensitive da
 | `unsubscribe(contentPath: String)`                                      | `Void`                            | Removes the view associated with `contentPath` from the list of subscribed views, stopping it from revealing further content.        |
 | `unsubscribeAllViews()`                                                 | `Void`                            | Unsubscribes all views that are currently subscribed, effectively stopping the revealing process for all views.                      |
 | `revealSubscribedViews(completion: @escaping (Result<Void, RevealTokenError>) -> Void)` | `Void`             | Reveals the content of all subscribed views. Upon completion, the result is returned in the completion handler.                      |                                                  |
+
+##### ⚠️ Handling errors safely
+
+`RevealTokenError` and `CollectTokenError` are designed to be safe to log: they never carry tokens or
+cardholder data as associated values, so no sensitive value can reach a log line, crash report or
+screenshot through `localizedDescription`, `String(describing:)` or a `dump()`.
+
+Keep that guarantee on your side as well:
+
+- Do not append the token you submitted to the SDK error before logging it.
+- Log the SDK error on its own (`error.localizedDescription`); never serialize the request payload
+  alongside it.
+- For support correlation, use your own non-sensitive request identifier instead of the token.
+
+`RevealTokenError.tokenNotFound` reports that the submitted token was not found, without echoing it.
 
 ### Usage Steps
 
@@ -293,14 +308,14 @@ Holds the view model that configures the appearance and behavior of the secure t
 | ----------------- | ----------------------------------------- | ----------- | ------------------------------------------------------------------------------ |
 | `fieldName`       | `String`                                  | -        | The name of the text field, used to identify it.                               |
 | `fieldType`       | `FieldType`                               | `.none`     | Specifies the type of data being entered, such as cardNumber, cvv, etc.        |
-| `shouldTokenize`  | `Bool`                                    | `true`      | Determines whether the input should be tokenized for security.                 |
+| `shouldTokenize`  | `Bool`                                    | `true`      | Determines whether the input should be tokenized for security. Ignored for the `cvc` and `cardNumber` field types, which are always tokenized. |
 | `regexPattern`    | `String?`                                 | `nil`       | An optional regular expression pattern to validate the input.                  |
 | `validationRules` | `ValidationRules?`                        | `nil`       | Optional rules for validating the field's content, based on the field type.    |
 | `maxLength`       | `Int?`                                    | `nil`       | The maximum allowed length for the input.                                      |
 | `uiConfig`        | `SecureTextFieldUIConfigurationViewModel` | `.init()`   | Configuration for customizing the UI appearance of the text field.             |
 | `properties`      | `SecureTextFieldPropertiesViewModel`      | `.init()`   | Additional properties that define the behavior and features of the text field. |
 | `isEnabled`       | `Bool`                                    | `true`      | Indicates whether the text field is enabled for user interaction.              |
-| `isVolatile`      | `Bool`                                    | `false`     | Indicates whether the data entered in the field is temporary and should be stored for a limited time. |
+| `isVolatile`      | `Bool`                                    | `false` (always `true` for `cvc`) | Indicates whether the data entered in the field is temporary and should be stored for a limited time. Ignored for the `cvc` field type, which is always collected as volatile. |
 
 
 ### Usage Steps
@@ -423,6 +438,13 @@ private var SecureCardNumberTextField: some View {
     .frame(maxWidth: .infinity, maxHeight: 38, alignment: .leading)
 }
 ```
+
+### 🔐 Behavior Derived From `fieldType`
+
+Some behavior is a property of the field type itself rather than a caller preference, so the SDK derives it from `fieldType` and the corresponding parameter cannot lower it:
+
+- **`cvc` is always volatile.** A CVC is sensitive authentication data that must not be retained beyond the authorization it was collected for, so it is always sent to the Tokenizer API with `volatile: true`, even when the view model is built with `isVolatile: false`.
+- **`cvc` and `cardNumber` are always tokenized**, regardless of `shouldTokenize`.
 
 ### 🔍 Validation Priority
 
